@@ -63,21 +63,32 @@ class SearchProblem:
         util.raiseNotDefined()
 
 class Edge:
-    def __init__(self, source, target, action):
+    def __init__(self, source, target, action, cost):
         self.source = source
         self.target = target
         self.action = action
+        self.cost = cost
 
 class Graph:
     def __init__(self, problem: SearchProblem, fringe):
         """
-        Creates a graph that searches using the specified datastructure
+        Initializes the graph search with the specified problem and datastructure.
+
+        problem: The problem in which to search
+        fringe: The datastructure to use in seearch algorithm. This can be a stack, queue or priority queue.
         """
         self.problem = problem
         self.visited = set()
         self.fringe = fringe
 
+    def search(self):
+        # Start expansion with the start state and zero cost
+        self.expand(Edge(None, self.problem.getStartState(), None, 0))
+
+        return self.getPath(self.goal)
+
     def expand(self, edge: Edge):
+        # Keep track of the nodes we've visited
         self.visited.add(edge.target)
 
         if self.problem.isGoalState(edge.target):
@@ -88,17 +99,18 @@ class Graph:
         for successor in self.problem.getSuccessors(edge.target):
             # Check if we've already visited this node
             if successor[0] not in self.visited:
-                # If not, add the successor to the stack/queue/etc. along with where it came from and what action you should take to get here
-                self.fringe.push(Edge(edge, successor[0], successor[1]))
+                # If not, add the successor with necessary information to the stack/queue/priority queue
+                self.fringe.push(Edge(edge, successor[0], successor[1], successor[2] + edge.cost))
 
+        # Expand the next node as determined by the datastructure we're using
         self.expand(self.fringe.pop())
 
-    def getPath(self):
+    def getPath(self, target):
         path = list()
-        # Track back from the goal state, we've saved the edges that led there with the according action
-        while self.goal.action is not None:
-            path.insert(0, self.goal.action)
-            self.goal = self.goal.source
+        # Track back from the target state, we've saved the edges that led there with the according action
+        while target.action is not None:
+            path.insert(0, target.action)
+            target = target.source
 
         return path
 
@@ -114,33 +126,28 @@ def tinyMazeSearch(problem):
 def depthFirstSearch(problem: SearchProblem):
     """
     Search the deepest nodes in the search tree first.
-
-    Your search algorithm needs to return a list of actions that reaches the
-    goal. Make sure to implement a graph search algorithm.
-
-    To get started, you might want to try some of these simple commands to
-    understand the search problem that is being passed in:
-
-    print("Start:", problem.getStartState())
-    print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
-    print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
+
+    # Search with a stack (FIFO)
     graph = Graph(problem, util.Stack())
-    graph.expand(Edge(None, problem.getStartState(), None))
 
-    return graph.getPath()
+    return graph.search()
 
-def breadthFirstSearch(problem):
+def breadthFirstSearch(problem: SearchProblem):
     """Search the shallowest nodes in the search tree first."""
+
+    # Search with a queue (FILO)
     graph = Graph(problem, util.Queue())
-    graph.expand(Edge(None, problem.getStartState(), None))
 
-    return graph.getPath()
+    return graph.search()
 
-def uniformCostSearch(problem):
+def uniformCostSearch(problem: SearchProblem):
     """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    # Use a priority queue with the cost so far to determine the priority
+    graph = Graph(problem, util.PriorityQueueWithFunction(lambda edge : edge.cost))
+
+    return graph.search()
 
 def nullHeuristic(state, problem=None):
     """
@@ -151,9 +158,11 @@ def nullHeuristic(state, problem=None):
 
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
 
+    # Combine the cost so far with the heuristic to determine the priority
+    graph = Graph(problem, util.PriorityQueueWithFunction(lambda edge : edge.cost + heuristic(edge.target, problem)))
+
+    return graph.search()
 
 # Abbreviations
 bfs = breadthFirstSearch
