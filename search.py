@@ -18,6 +18,7 @@ Pacman agents (in searchAgents.py).
 """
 
 import util
+from game import Directions
 
 class SearchProblem:
     """
@@ -61,18 +62,56 @@ class SearchProblem:
         """
         util.raiseNotDefined()
 
+class Edge:
+    def __init__(self, source, target, action):
+        self.source = source
+        self.target = target
+        self.action = action
+
+class Graph:
+    def __init__(self, problem: SearchProblem, fringe):
+        """
+        Creates a graph that searches using the specified datastructure
+        """
+        self.problem = problem
+        self.visited = set()
+        self.fringe = fringe
+
+    def expand(self, edge: Edge):
+        self.visited.add(edge.target)
+
+        if self.problem.isGoalState(edge.target):
+            # Store that the goal state was reached along this edge
+            self.goal = edge
+            return
+
+        for successor in self.problem.getSuccessors(edge.target):
+            # Check if we've already visited this node
+            if successor[0] not in self.visited:
+                # If not, add the successor to the stack/queue/etc. along with where it came from and what action you should take to get here
+                self.fringe.push(Edge(edge, successor[0], successor[1]))
+
+        self.expand(self.fringe.pop())
+
+    def getPath(self):
+        path = list()
+        # Track back from the goal state, we've saved the edges that led there with the according action
+        while self.goal.action is not None:
+            path.insert(0, self.goal.action)
+            self.goal = self.goal.source
+
+        return path
 
 def tinyMazeSearch(problem):
     """
     Returns a sequence of moves that solves tinyMaze.  For any other maze, the
     sequence of moves will be incorrect, so only use this for tinyMaze.
     """
-    from game import Directions
     s = Directions.SOUTH
     w = Directions.WEST
     return  [s, s, w, s, w, w, s, w]
 
-def depthFirstSearch(problem):
+def depthFirstSearch(problem: SearchProblem):
     """
     Search the deepest nodes in the search tree first.
 
@@ -86,13 +125,17 @@ def depthFirstSearch(problem):
     print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    graph = Graph(problem, util.Stack())
+    graph.expand(Edge(None, problem.getStartState(), None))
+
+    return graph.getPath()
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    graph = Graph(problem, util.Queue())
+    graph.expand(Edge(None, problem.getStartState(), None))
+
+    return graph.getPath()
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
