@@ -83,27 +83,26 @@ class Graph:
 
     def search(self):
         # Start expansion with the start state and zero cost
-        self.expand(Edge(None, self.problem.getStartState(), None, 0))
+        self.current = Edge(None, self.problem.getStartState(), None, 0)
 
-        return self.getPath(self.goal)
+        while not self.problem.isGoalState(self.current.target):
+            # Expand the current node
+            self.expand(self.current)
+            # Continue with the next node as determined by the datastructure we're using
+            self.current = self.fringe.pop()
+
+        # We've found the goal state, return the path
+        return self.getPath(self.current)
 
     def expand(self, edge: Edge):
         # Keep track of the nodes we've visited
         self.visited.add(edge.target)
-
-        if self.problem.isGoalState(edge.target):
-            # Store that the goal state was reached along this edge
-            self.goal = edge
-            return
 
         for successor in self.problem.getSuccessors(edge.target):
             # Check if we've already visited this node
             if successor[0] not in self.visited:
                 # If not, add the successor with necessary information to the stack/queue/priority queue
                 self.fringe.push(Edge(edge, successor[0], successor[1], successor[2] + edge.cost))
-
-        # Expand the next node as determined by the datastructure we're using
-        self.expand(self.fringe.pop())
 
     def getPath(self, target):
         path = list()
