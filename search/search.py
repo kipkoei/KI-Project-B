@@ -86,8 +86,10 @@ class Graph:
         self.current = Edge(None, self.problem.getStartState(), None, 0)
 
         while not self.problem.isGoalState(self.current.target):
-            # Expand the current node
-            self.expand(self.current)
+            # Expand the current node if we haven't visited it yet
+            if self.current.target not in self.visited:
+                self.expand(self.current)
+
             # Continue with the next node as determined by the datastructure we're using
             self.current = self.fringe.pop()
 
