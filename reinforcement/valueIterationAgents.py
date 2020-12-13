@@ -32,7 +32,7 @@ from learningAgents import ValueEstimationAgent
 import collections
 
 # VOOR DEBUGGEN
-mdpFunction = gridworld.getBookGrid
+mdpFunction = gridworld.getBridgeGrid
 mdp = mdpFunction()
 mdp.setLivingReward(0)
 mdp.setNoise(0.2)
@@ -61,51 +61,48 @@ class ValueIterationAgent(ValueEstimationAgent):
               mdp.getReward(state, action, nextState)
               mdp.isTerminal(state)
         """
-
-
         self.mdp = mdp
         self.discount = discount
         self.iterations = iterations
         self.values = util.Counter() # A Counter is a dict with default 0
         self.tempvalues = util.Counter()
         self.qvalues = util.Counter()
-        self.runValueIteration()
+
+        for i in range(0, iterations):
+            self.runValueIteration()
 
    
 
     def runValueIteration(self):
-        for x in range(0, self.iterations):
-            for state in self.mdp.getStates():
-                #print(str(state) + " has possible actions" + str(self.mdp.getPossibleActions(state)))
-                bestvalue = 0
-                #V(s) of a state can only change if an action from s can lead to a state s' with V(s) != 0
-                #So if the values of successor states are 0, than the sum will be 0. Then we don't count this action
-                check = 0
-                for action in self.mdp.getPossibleActions(state):
-                    transitions = self.mdp.getTransitionStatesAndProbs(state, action)
-                    #If check is ever not 0, then there is a possible successor state s' with V(s') <= 0. So we count the action.
-                    if(check == 0):
-                        check = (sum((self.getValue(transition[0]) != 0) for transition in transitions) != 0) # (1 if true)
-                    #If the state is terminal (so strictly speaking, if it has possible action 'exit', V = reward
-                    if(len(transitions) == 1 and self.mdp.isTerminal(transitions[0][0])):
-                        bestvalue = self.mdp.getReward(state, action, 'TERMINAL_STATE')
-                        check = 1
-                    else:
-                        value = sum((transition[1] * 
-                                    (self.mdp.getReward(state, action, transition[0]) + self.discount * self.getValue(transition[0]))) 
-                                    for transition in transitions)
-                        if(value > bestvalue):
-                            bestvalue = value
-                    if(check == 1):
-                        self.tempvalues[state] = bestvalue
+        for state in self.mdp.getStates():
+            bestvalue = float('-inf')
+            #V(s) of a state can only change if an action from s can lead to a state s' with V(s) != 0
+            #So if the values of successor states are 0, than the sum will be 0. Then we don't count this action
+            check = 0
 
-            #print("After iteration " + str(x+1) + ":")
-            for state in self.mdp.getStates():
-                self.values[state] = self.tempvalues[state]
-                #print("- for state " + str(state) + ", the best value = " + str(self.values[state]))
-            #print("")
-        newvalues = [self.getValue(state) for state in self.mdp.getStates()]
-        "*** YOUR CODE HERE ***"
+            for action in self.mdp.getPossibleActions(state):
+                transitions = self.mdp.getTransitionStatesAndProbs(state, action)
+
+                #If check is ever not 0, then there is a possible successor state s' with V(s') <= 0. So we count the action.
+                if check == 0:
+                    check = (sum((self.getValue(transition[0]) != 0) for transition in transitions) != 0) # (1 if true)
+
+                #If the state is terminal (so strictly speaking, if it has possible action 'exit', V = reward
+                if len(transitions) == 1 and self.mdp.isTerminal(transitions[0][0]):
+                    bestvalue = self.mdp.getReward(state, action, 'TERMINAL_STATE')
+                    check = 1
+                else:
+                    value = sum((transition[1] *
+                                (self.mdp.getReward(state, action, transition[0]) + self.discount * self.getValue(transition[0])))
+                                for transition in transitions)
+                    if(value > bestvalue):
+                        bestvalue = value
+
+                if check == 1:
+                    self.tempvalues[state] = bestvalue
+
+        for state in self.mdp.getStates():
+            self.values[state] = self.tempvalues[state]
 
 
     def getValue(self, state):
@@ -120,11 +117,10 @@ class ValueIterationAgent(ValueEstimationAgent):
           Compute the Q-value of action in state from the
           value function stored in self.values.
         """
-        
         transitions = self.mdp.getTransitionStatesAndProbs(state, action)
-        qvalue = sum((transition[1] * 
-                     (self.mdp.getReward(state, action, transition[0]) + self.discount * self.getValue(transition[0]))) 
-                     for transition in transitions)
+        qvalue = sum(transition[1] * (self.mdp.getReward(state, action, transition[0]) + self.discount * self.getValue(transition[0]))
+             for transition in transitions)
+
         return qvalue
 
 
@@ -137,22 +133,22 @@ class ValueIterationAgent(ValueEstimationAgent):
           there are no legal actions, which is the case at the
           terminal state, you should return None.
         """
-        "*** YOUR CODE HERE ***"
-        
         actions = self.mdp.getPossibleActions(state)
-        if('exit' in actions):
+
+        if 'exit' in actions:
             return 'exit'
-        elif(len(actions) == 0):
-            return None
-        else:
-            qval = -2
-            best = None
-            for action in actions:
-                qvalnew = self.computeQValueFromValues(state, action)
-                if(qvalnew > qval):
-                    qval = qvalnew
-                    best = action
-            return best
+
+        qval = -float('inf')
+        best = None
+
+        for action in actions:
+            qvalnew = self.computeQValueFromValues(state, action)
+
+            if qvalnew > qval:
+                qval = qvalnew
+                best = action
+
+        return best
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
