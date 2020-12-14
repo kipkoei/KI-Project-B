@@ -61,11 +61,14 @@ class QLearningAgent(ReinforcementAgent):
           terminal state, you should return a value of 0.0.
         """
         actions = self.getLegalActions(state)
+        # Get the qValue for every action
         values = [self.getQValue(state, action) for action in actions]
 
+        # If there are no legal actions, add a score of 0
         if len(values) == 0:
             values.append(0)
 
+        # Return the highest expected score in this state
         return max(values)
 
     def computeActionFromQValues(self, state):
@@ -75,16 +78,16 @@ class QLearningAgent(ReinforcementAgent):
           you should return None.
         """
         actions = self.getLegalActions(state)
-
-        if 'exit' in actions:
-            return 'exit'
-
+        # Check what the highest expected score is in this state
         maxAction = self.computeValueFromQValues(state)
+        # Get all actions with the highest score
         possibleActions = [action for action in actions if self.getQValue(state, action) == maxAction]
 
+        # If we have no legal actions, add None
         if len(possibleActions) == 0:
             possibleActions.append(None)
 
+        # Randomly pick one of the best actions
         return random.choice(possibleActions)
 
     def getAction(self, state):
@@ -98,13 +101,17 @@ class QLearningAgent(ReinforcementAgent):
           HINT: You might want to use util.flipCoin(prob)
           HINT: To pick randomly from a list, use random.choice(list)
         """
-        actions = self.getLegalActions(state)
-        if len(actions) == 0:
-            actions.append(None)
-
         if util.flipCoin(self.epsilon):
+            actions = self.getLegalActions(state)
+
+            # Make sure we return None if there are no legal actions
+            if len(actions) == 0:
+                actions.append(None)
+
+            # Return a random action
             return random.choice(actions)
 
+        # Otherwise return (one of) the best action(s)
         return self.computeActionFromQValues(state)
 
     def update(self, state, action, nextState, reward):
@@ -116,7 +123,10 @@ class QLearningAgent(ReinforcementAgent):
           NOTE: You should never call this function,
           it will be called on your behalf
         """
+
+        # Get the expected reward when going to this state
         sample = reward + self.discount * self.computeValueFromQValues(nextState)
+        # Set the new qValue
         self.qValues[(state, action)] = (1 - self.alpha) * self.getQValue(state, action) + self.alpha * sample
 
 

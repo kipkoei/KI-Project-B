@@ -64,13 +64,13 @@ class ValueIterationAgent(ValueEstimationAgent):
         self.mdp = mdp
         self.discount = discount
         self.iterations = iterations
-        self.values = util.Counter() # A Counter is a dict with default 0
+        self.values = util.Counter()
         self.tempvalues = util.Counter()
         self.qvalues = util.Counter()
 
-        for i in range(0, iterations):
+        # Run the value iterations
+        for i in range(iterations):
             self.runValueIteration()
-
    
 
     def runValueIteration(self):
@@ -101,6 +101,7 @@ class ValueIterationAgent(ValueEstimationAgent):
                 if check == 1:
                     self.tempvalues[state] = bestvalue
 
+        # Only update the values after the iteration, otherwise we will use intermediate values to update
         for state in self.mdp.getStates():
             self.values[state] = self.tempvalues[state]
 
@@ -118,10 +119,10 @@ class ValueIterationAgent(ValueEstimationAgent):
           value function stored in self.values.
         """
         transitions = self.mdp.getTransitionStatesAndProbs(state, action)
-        qvalue = sum(transition[1] * (self.mdp.getReward(state, action, transition[0]) + self.discount * self.getValue(transition[0]))
-             for transition in transitions)
 
-        return qvalue
+        values = [transition[1] * (self.mdp.getReward(state, action, transition[0]) + self.discount * self.getValue(transition[0])) for transition in transitions]
+
+        return sum(values)
 
 
     def computeActionFromValues(self, state):
@@ -135,15 +136,17 @@ class ValueIterationAgent(ValueEstimationAgent):
         """
         actions = self.mdp.getPossibleActions(state)
 
+        # This is the only legal action
         if 'exit' in actions:
             return 'exit'
 
+        # Default is action None, initialize the expected value at minus infinity so negative values are still counted
         qval = -float('inf')
         best = None
 
         for action in actions:
             qvalnew = self.computeQValueFromValues(state, action)
-
+            # Select the new action if it's better than any of the previous ones
             if qvalnew > qval:
                 qval = qvalnew
                 best = action
